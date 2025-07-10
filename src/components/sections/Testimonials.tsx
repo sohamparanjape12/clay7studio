@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star, Quote } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getTestimonials } from '@/lib/supabase';
 import { motion, Variants } from 'framer-motion';
 
 const staggerContainer: Variants = {
@@ -41,21 +41,17 @@ export default function Testimonials() {
   const [testimonials, setTestimonials] = useState(fallbackTestimonials);
 
   useEffect(() => {
-    const getTestimonials = async () => {
-      const { data, error } = await supabase
-        .from('testimonials')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(6);
-
-      if (error) {
-        console.error('Error fetching testimonials:', error);
-      } else if (data && data.length > 0) {
-        setTestimonials(data);
+    const fetchTestimonials = async () => {
+      try {
+        const data = await getTestimonials();
+        if (data && data.length > 0) {
+          setTestimonials(data.slice(0, 6));
+        }
+      } catch (error) {
+        // fallback to static
       }
     };
-
-    getTestimonials();
+    fetchTestimonials();
   }, []);
 
   return (
