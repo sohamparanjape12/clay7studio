@@ -14,6 +14,7 @@ import handBuildingImage from "@/images/hand-building.jpg";
 import industrialImage from "@/images/industrial-pottery.jpg";
 import erandwaneStudioImage from "@/images/erandwane-studio.jpg";
 import rashmiVaidyaTeachingImage from "@/images/rashmi-vaidya-teaching.jpg";
+import type { StaticImageData } from "next/image";
 
 const images = [
   { src: potteryClass1, alt: "Pottery Class 1" },
@@ -26,7 +27,7 @@ const images = [
 ];
 
 export default function GalleryPage() {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | StaticImageData | null>(null);
 
   const container = {
     hidden: { opacity: 0 },
