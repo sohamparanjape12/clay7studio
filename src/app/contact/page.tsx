@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { tr } from "date-fns/locale";
+import { createInquiry } from "@/lib/supabase";
 
 const locations = [
 	{
@@ -42,20 +43,24 @@ export default function ContactPage() {
 
 		setIsSubmitting(true);
 
-		// Simulate API call
-		await new Promise((resolve) => setTimeout(resolve, 1500));
-
-		// In a real application, you would send the data to your API endpoint here.
-		console.log("Contact form submitted:", formData);
-
-		setIsSubmitting(false);
-		toast.success("Message Sent!", {
-			description: "Thank you for your message. We will get back to you soon.",
-			duration: 5000,
-		});
-
-		// Reset form
-		setFormData({ name: "", email: "", phone: "", message: "" });
+		try {
+			await createInquiry({
+				name: formData.name,
+				email: formData.email,
+				phone: formData.phone,
+				inquiry_type: "General",
+				message: formData.message,
+			});
+			toast.success("Message Sent!", {
+				description: "Thank you for your message. We will get back to you soon.",
+				duration: 5000,
+			});
+			setFormData({ name: "", email: "", phone: "", message: "" });
+		} catch (err) {
+			toast.error("Failed to send message. Please try again.");
+		} finally {
+			setIsSubmitting(false);
+		}
 	};
 
 	const container = {

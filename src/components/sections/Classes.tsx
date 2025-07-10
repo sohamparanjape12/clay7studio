@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, Users, Star, ArrowRight } from 'lucide-react';
@@ -9,6 +10,7 @@ import handbuildingImage from '@/images/hand-building.jpg';
 import industrialImage from '@/images/industrial-pottery.jpg';
 import Image from 'next/image';
 import { motion, Variants } from 'framer-motion';
+import { getClasses } from "@/lib/supabase";
 
 const staggerContainer: Variants = {
   hidden: { opacity: 0 },
@@ -30,8 +32,7 @@ const fadeInUp: Variants = {
   },
 };
 
-
-const classes = [
+const fallbackClasses = [
   {
     id: 1,
     name: "Wheel Throwing Basics",
@@ -63,11 +64,45 @@ const classes = [
     description: "Professional pottery training for bulk production and commercial applications.",
     benefits: ["Professional skills", "Business opportunities", "Advanced techniques"],
     image: industrialImage,
-    slug: "industrial-level-pottery"
+    slug: "industrial-pottery"
   }
 ];
 
 export default function Classes() {
+  const [classes, setClasses] = useState(fallbackClasses);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getClasses();
+        if (data && data.length > 0) {
+          // Map DB fields to UI fields, fallback to static images if missing
+          setClasses(
+            data.slice(0, 3).map((c: any, idx: number) => ({
+              id: c.id,
+              name: c.name,
+              level: c.level,
+              duration: c.duration,
+              price: c.price_details || c.price || "",
+              description: c.description,
+              benefits: typeof c.benefits === "string" ? c.benefits.split(",").map((b: string) => b.trim()) : [],
+              image:
+                c.image_url ||
+                (idx === 0
+                  ? wheelthrowingImage
+                  : idx === 1
+                  ? handbuildingImage
+                  : industrialImage),
+              slug: c.slug,
+            }))
+          );
+        }
+      } catch {
+        // fallback to static
+      }
+    })();
+  }, []);
+
   return (
     <section className="py-20 bg-gradient-to-br from-[#f9f3f2] to-[#f2e7e5] md:px-20">
       <div className="container mx-auto px-4">
@@ -91,69 +126,69 @@ export default function Classes() {
           viewport={{ once: true, amount: 0.2 }}
         >
           {classes.map((classItem) => (
-            <motion.div variants={fadeInUp} className="flex">
-            <Card key={classItem.id} className="flex overflow-hidden py-0 pb-5 hover:shadow-xl transition-shadow duration-300">
-              <div className="aspect-[4/3] overflow-hidden">
-                <Image
-                width={400}
-                height={300} 
-                  src={classItem.image} 
-                  alt={classItem.name}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              
-              <CardHeader className="pb-0 flex-0">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="px-3 py-1 bg-[#fde9e4] text-[#732b1d] text-sm rounded-full">
-                    {classItem.level}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm text-gray-600">4.8</span>
-                  </div>
-                </div>
-                <CardTitle className="text-xl text-gray-900">{classItem.name}</CardTitle>
-              </CardHeader>
-              
-              <CardContent className="flex flex-col flex-1">
-                <div className='flex-1 space-y-4 mb-4'>
-                    <p className="text-gray-600 text-sm">{classItem.description}</p>
-                    
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{classItem.duration}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        <span>Small groups</span>
-                    </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-900">Benefits:</div>
-                    <div className="flex flex-wrap gap-2">
-                        {classItem.benefits.map((benefit, index) => (
-                        <span key={index} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                            {benefit}
-                        </span>
-                        ))}
-                    </div>
-                    </div>
+            <motion.div variants={fadeInUp} className="flex" key={classItem.id}>
+              <Card className="flex overflow-hidden py-0 pb-5 hover:shadow-xl transition-shadow duration-300">
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img
+                    width={400}
+                    height={300} 
+                    src={typeof classItem.image === "string" ? classItem.image : classItem.image.src} 
+                    alt={classItem.name}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
                 
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <div className="text-lg font-bold text-[#732b1d]">{classItem.price}</div>
-                  <Button asChild size="sm" className="bg-[#732b1d] hover:bg-[#652619] text-white">
-                    <Link href={`/classes/${classItem.slug}`}>
-                      Learn More
-                      <ArrowRight className="ml-1 w-4 h-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                <CardHeader className="pb-0 flex-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="px-3 py-1 bg-[#fde9e4] text-[#732b1d] text-sm rounded-full">
+                      {classItem.level}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm text-gray-600">4.8</span>
+                    </div>
+                  </div>
+                  <CardTitle className="text-xl text-gray-900">{classItem.name}</CardTitle>
+                </CardHeader>
+                
+                <CardContent className="flex flex-col flex-1">
+                  <div className='flex-1 space-y-4 mb-4'>
+                      <p className="text-gray-600 text-sm">{classItem.description}</p>
+                      
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          <span>{classItem.duration}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          <span>Small groups</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-gray-900">Benefits:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {classItem.benefits.map((benefit: string, index: number) => (
+                            <span key={index} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                              {benefit}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="text-lg font-bold text-[#732b1d]">{classItem.price}</div>
+                    <Button asChild size="sm" className="bg-[#732b1d] hover:bg-[#652619] text-white">
+                      <Link href={`/classes/${classItem.slug}`}>
+                        Learn More
+                        <ArrowRight className="ml-1 w-4 h-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           ))}
         </motion.div>

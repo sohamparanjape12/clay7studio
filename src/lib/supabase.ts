@@ -78,3 +78,85 @@ export const createInquiry = async (inquiry: {
   
   return data[0]
 }
+
+export const createTestimonial = async (testimonial: {
+  author_name: string;
+  rating: number;
+  review_text: string;
+  source: string;
+}) => {
+  const { data, error } = await supabase
+    .from('testimonials')
+    .insert([testimonial])
+    .select();
+  if (error) throw error;
+  return data?.[0];
+};
+
+export const updateTestimonial = async (id: string, testimonial: {
+  author_name: string;
+  rating: number;
+  review_text: string;
+  source: string;
+}) => {
+  const { data, error } = await supabase
+    .from('testimonials')
+    .update(testimonial)
+    .eq('id', id)
+    .select();
+  if (error) throw error;
+  return data?.[0];
+};
+
+export const deleteTestimonial = async (id: string) => {
+  const { error } = await supabase
+    .from('testimonials')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+};
+
+export const createClass = async (classObj: {
+  name: string;
+  slug: string;
+  description: string;
+  level: string;
+  duration: string;
+  price_details: string;
+  benefits: string;
+  image_url: string;
+}) => {
+  const { data, error } = await supabase
+    .from('classes')
+    .insert([classObj])
+    .select();
+  if (error) throw error;
+  return data?.[0];
+};
+
+export const updateClass = async (id: string, classObj: {
+  name: string;
+  slug: string;
+  description: string;
+  level: string;
+  duration: string;
+  price_details: string;
+  benefits: string;
+  image_url: string;
+}) => {
+  const { data, error } = await supabase
+    .from('classes')
+    .update(classObj)
+    .eq('id', id)
+    .select();
+  if (error) throw error;
+  return data?.[0];
+};
+
+export const deleteClass = async (id: string) => {
+  const { error } = await supabase
+    .from('classes')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+};

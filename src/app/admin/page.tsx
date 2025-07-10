@@ -9,9 +9,19 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Eye, Star, MessageCircle, Calendar, Users, BookOpen, Mail, Phone } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Star, MessageCircle, Calendar, Users, BookOpen, Mail, Phone, Sparkle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { motion } from "framer-motion";
+import {
+  createTestimonial,
+  updateTestimonial,
+  deleteTestimonial as deleteTestimonialDb,
+  createClass as createClassDb,
+  updateClass,
+  deleteClass as deleteClassDb,
+} from "@/lib/supabase";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 interface Class {
   id: string;
@@ -120,10 +130,12 @@ export default function AdminPage() {
     e.preventDefault();
     try {
       if (editingClass) {
-        await supabase.from('classes').update(classForm).eq('id', editingClass.id);
+        await updateClass(editingClass.id, classForm);
         setEditingClass(null);
+        toast.success("Class updated successfully!");
       } else {
-        await supabase.from('classes').insert([classForm]);
+        await createClassDb(classForm);
+        toast.success("Class created successfully!");
       }
       setClassForm({
         name: '',
@@ -135,8 +147,10 @@ export default function AdminPage() {
         benefits: '',
         image_url: ''
       });
+      setIsAddingClass(false);
       fetchData();
     } catch (error) {
+      toast.error("Error saving class.");
       console.error('Error saving class:', error);
     }
   };
@@ -158,9 +172,11 @@ export default function AdminPage() {
   const handleDeleteClass = async (id: string) => {
     if (confirm('Are you sure you want to delete this class?')) {
       try {
-        await supabase.from('classes').delete().eq('id', id);
+        await deleteClassDb(id);
+        toast.success("Class deleted.");
         fetchData();
       } catch (error) {
+        toast.error("Error deleting class.");
         console.error('Error deleting class:', error);
       }
     }
@@ -171,10 +187,12 @@ export default function AdminPage() {
     e.preventDefault();
     try {
       if (editingTestimonial) {
-        await supabase.from('testimonials').update(testimonialForm).eq('id', editingTestimonial.id);
+        await updateTestimonial(editingTestimonial.id, testimonialForm);
         setEditingTestimonial(null);
+        toast.success("Testimonial updated successfully!");
       } else {
-        await supabase.from('testimonials').insert([testimonialForm]);
+        await createTestimonial(testimonialForm);
+        toast.success("Testimonial created successfully!");
       }
       setTestimonialForm({
         author_name: '',
@@ -182,8 +200,10 @@ export default function AdminPage() {
         review_text: '',
         source: 'Website'
       });
+      setIsAddingTestimonial(false);
       fetchData();
     } catch (error) {
+      toast.error("Error saving testimonial.");
       console.error('Error saving testimonial:', error);
     }
   };
@@ -201,9 +221,11 @@ export default function AdminPage() {
   const handleDeleteTestimonial = async (id: string) => {
     if (confirm('Are you sure you want to delete this testimonial?')) {
       try {
-        await supabase.from('testimonials').delete().eq('id', id);
+        await deleteTestimonialDb(id);
+        toast.success("Testimonial deleted.");
         fetchData();
       } catch (error) {
+        toast.error("Error deleting testimonial.");
         console.error('Error deleting testimonial:', error);
       }
     }
@@ -334,294 +356,298 @@ export default function AdminPage() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-gray-50"
-    >
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-full py-4">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-[#732b1d]">Admin Dashboard</h1>
-            </div>
-            <div className="text-sm text-gray-500">
-              Welcome back, Administrator
+    <>
+      <Toaster richColors />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-gray-50"
+      >
+        {/* Header */}
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-full py-4">
+              <div className="flex items-center">
+                <h1 className="text-2xl font-bold text-[#732b1d]">Admin Dashboard</h1>
+              </div>
+              <div className="text-sm text-gray-500">
+                Welcome back, Administrator
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="classes">Classes</TabsTrigger>
-            <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
-            <TabsTrigger value="inquiries">Inquiries</TabsTrigger>
-          </TabsList>
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-4 mb-8">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="classes">Classes</TabsTrigger>
+              <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
+              <TabsTrigger value="inquiries">Inquiries</TabsTrigger>
+            </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <motion.div
-              variants={container}
-              initial="hidden"
-              animate="show"
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-            >
-              <motion.div variants={item}>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Classes</CardTitle>
-                    <BookOpen className="h-4 w-4 text-[#732b1d]" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-[#732b1d]">{classes.length}</div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-              <motion.div variants={item}>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Testimonials</CardTitle>
-                    <Star className="h-4 w-4 text-[#732b1d]" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-[#732b1d]">{testimonials.length}</div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-              <motion.div variants={item}>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">New Inquiries</CardTitle>
-                    <MessageCircle className="h-4 w-4 text-[#732b1d]" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-[#732b1d]">{inquiries.length}</div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-              <motion.div variants={item}>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
-                    <Star className="h-4 w-4 text-[#732b1d]" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-[#732b1d]">
-                      {testimonials.length > 0 
-                        ? (testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length).toFixed(1)
-                        : '0.0'
-                      }
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </motion.div>
-
-            {/* Recent Activity */}
-            <motion.div variants={item}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Latest inquiries and testimonials</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {inquiries.slice(0, 5).map((inquiry) => (
-                      <div key={inquiry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{inquiry.name}</p>
-                          <p className="text-sm text-gray-600">{inquiry.inquiry_type}</p>
-                        </div>
-                        <Badge variant="outline" className={getInquiryTypeColor(inquiry.inquiry_type)}>
-                          {inquiry.inquiry_type}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-
-          {/* Classes Tab */}
-          <TabsContent value="classes" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-[#732b1d]">Manage Classes</h2>
-              <Dialog open={!!editingClass || isAddingClass} onOpenChange={(open) => {
-                if (!open) {
-                  setEditingClass(null);
-                  setIsAddingClass(false);
-                }
-              }}>
-                <DialogTrigger asChild>
-                  <Button className="bg-[#732b1d] hover:bg-[#5a2117]" onClick={() => {
-                    setEditingClass(null);
-                    setIsAddingClass(true);
-                  }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add New Class
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>{editingClass ? 'Edit Class' : 'Add New Class'}</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleClassSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Class Name</label>
-                        <Input
-                          value={classForm.name}
-                          onChange={(e) => setClassForm({...classForm, name: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Slug</label>
-                        <Input
-                          value={classForm.slug}
-                          onChange={(e) => setClassForm({...classForm, slug: e.target.value})}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Description</label>
-                      <Textarea
-                        value={classForm.description}
-                        onChange={(e) => setClassForm({...classForm, description: e.target.value})}
-                        rows={3}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Level</label>
-                        <Select value={classForm.level} onValueChange={(value) => setClassForm({...classForm, level: value})}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Beginner">Beginner</SelectItem>
-                            <SelectItem value="Intermediate">Intermediate</SelectItem>
-                            <SelectItem value="Advanced">Advanced</SelectItem>
-                            <SelectItem value="Industrial">Industrial</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Duration</label>
-                        <Input
-                          value={classForm.duration}
-                          onChange={(e) => setClassForm({...classForm, duration: e.target.value})}
-                          placeholder="e.g., 8 weeks"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Price Details</label>
-                      <Input
-                        value={classForm.price_details}
-                        onChange={(e) => setClassForm({...classForm, price_details: e.target.value})}
-                        placeholder="e.g., Rs 1000 per session"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Benefits</label>
-                      <Textarea
-                        value={classForm.benefits}
-                        onChange={(e) => setClassForm({...classForm, benefits: e.target.value})}
-                        placeholder="e.g., Stress relief, Motor skill development"
-                        rows={2}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Image URL</label>
-                      <Input
-                        value={classForm.image_url}
-                        onChange={(e) => setClassForm({...classForm, image_url: e.target.value})}
-                        placeholder="/images/class-image.jpg"
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button type="button" variant="outline" onClick={() => setEditingClass(null)}>
-                        Cancel
-                      </Button>
-                      <Button type="submit" className="bg-[#732b1d] hover:bg-[#5a2117]">
-                        {editingClass ? 'Update' : 'Create'} Class
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            <motion.div
-              variants={container}
-              initial="hidden"
-              animate="show"
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              {classes.map((classItem) => (
-                <motion.div key={classItem.id} variants={item}>
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-6">
+              <motion.div
+                variants={container}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+              >
+                <motion.div variants={item}>
                   <Card>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">{classItem.name}</CardTitle>
-                          <Badge className={getLevelColor(classItem.level)} variant="secondary">
-                            {classItem.level}
-                          </Badge>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            onClick={() => handleEditClass(classItem)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="destructive"
-                            onClick={() => handleDeleteClass(classItem.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Classes</CardTitle>
+                      <BookOpen className="h-4 w-4 text-[#732b1d]" />
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-gray-600 mb-2">{classItem.description}</p>
-                      <div className="space-y-1 text-sm">
-                        <p><span className="font-medium">Duration:</span> {classItem.duration}</p>
-                        <p><span className="font-medium">Price:</span> {classItem.price_details}</p>
+                      <div className="text-2xl font-bold text-[#732b1d]">{classes.length}</div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+                <motion.div variants={item}>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Testimonials</CardTitle>
+                      <Star className="h-4 w-4 text-[#732b1d]" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-[#732b1d]">{testimonials.length}</div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+                <motion.div variants={item}>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">New Inquiries</CardTitle>
+                      <MessageCircle className="h-4 w-4 text-[#732b1d]" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-[#732b1d]">{inquiries.length}</div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+                <motion.div variants={item}>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
+                      <Star className="h-4 w-4 text-[#732b1d]" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-[#732b1d]">
+                        {testimonials.length > 0 
+                          ? (testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length).toFixed(1)
+                          : '0.0'
+                        }
                       </div>
                     </CardContent>
                   </Card>
                 </motion.div>
-              ))}
-            </motion.div>
-          </TabsContent>
+              </motion.div>
 
-          {/* Testimonials Tab */}
-          <TabsContent value="testimonials" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-[#732b1d]">Manage Testimonials</h2>
-              <Dialog open={!!editingTestimonial || isAddingTestimonial} onOpenChange={(open) => {
-                if (!open) {
-                  setEditingTestimonial(null);
-                  setIsAddingTestimonial(false);
-                }
-              }}>
-                <DialogTrigger asChild>
-                  <Button className="bg-[#732b1d] hover:bg-[#5a2117]" onClick={() => {
+              {/* Recent Activity */}
+              <motion.div variants={item}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Activity</CardTitle>
+                    <CardDescription>Latest inquiries and testimonials</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {inquiries.slice(0, 5).map((inquiry) => (
+                        <div key={inquiry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div>
+                            <p className="font-medium">{inquiry.name}</p>
+                            <p className="text-sm text-gray-600">{inquiry.inquiry_type}</p>
+                            {inquiry.event_type && (
+                              <p className="text-xs text-gray-500">Event: {inquiry.event_type}</p>)}
+                          </div>
+                          <Badge variant="outline" className={getInquiryTypeColor(inquiry.inquiry_type)}>
+                            {inquiry.inquiry_type}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+
+            {/* Classes Tab */}
+            <TabsContent value="classes" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-[#732b1d]">Manage Classes</h2>
+                <Dialog open={!!editingClass || isAddingClass} onOpenChange={(open) => {
+                  if (!open) {
+                    setEditingClass(null);
+                    setIsAddingClass(false);
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-[#732b1d] hover:bg-[#5a2117]" onClick={() => {
+                      setEditingClass(null);
+                      setIsAddingClass(true);
+                    }}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add New Class
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>{editingClass ? 'Edit Class' : 'Add New Class'}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleClassSubmit} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Class Name</label>
+                          <Input
+                            value={classForm.name}
+                            onChange={(e) => setClassForm({...classForm, name: e.target.value})}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Slug</label>
+                          <Input
+                            value={classForm.slug}
+                            onChange={(e) => setClassForm({...classForm, slug: e.target.value})}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Description</label>
+                        <Textarea
+                          value={classForm.description}
+                          onChange={(e) => setClassForm({...classForm, description: e.target.value})}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Level</label>
+                          <Select value={classForm.level} onValueChange={(value) => setClassForm({...classForm, level: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Beginner">Beginner</SelectItem>
+                              <SelectItem value="Intermediate">Intermediate</SelectItem>
+                              <SelectItem value="Advanced">Advanced</SelectItem>
+                              <SelectItem value="Industrial">Industrial</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Duration</label>
+                          <Input
+                            value={classForm.duration}
+                            onChange={(e) => setClassForm({...classForm, duration: e.target.value})}
+                            placeholder="e.g., 8 weeks"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Price Details</label>
+                        <Input
+                          value={classForm.price_details}
+                          onChange={(e) => setClassForm({...classForm, price_details: e.target.value})}
+                          placeholder="e.g., Rs 1000 per session"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Benefits</label>
+                        <Textarea
+                          value={classForm.benefits}
+                          onChange={(e) => setClassForm({...classForm, benefits: e.target.value})}
+                          placeholder="e.g., Stress relief, Motor skill development"
+                          rows={2}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Image URL</label>
+                        <Input
+                          value={classForm.image_url}
+                          onChange={(e) => setClassForm({...classForm, image_url: e.target.value})}
+                          placeholder="/images/class-image.jpg"
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <Button type="button" variant="outline" onClick={() => setEditingClass(null)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" className="bg-[#732b1d] hover:bg-[#5a2117]">
+                          {editingClass ? 'Update' : 'Create'} Class
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <motion.div
+                variants={container}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                {classes.map((classItem) => (
+                  <motion.div key={classItem.id} variants={item}>
+                    <Card>
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle className="text-lg">{classItem.name}</CardTitle>
+                            <Badge className={getLevelColor(classItem.level)} variant="secondary">
+                              {classItem.level}
+                            </Badge>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => handleEditClass(classItem)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="destructive"
+                              onClick={() => handleDeleteClass(classItem.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-gray-600 mb-2">{classItem.description}</p>
+                        <div className="space-y-1 text-sm">
+                          <p><span className="font-medium">Duration:</span> {classItem.duration}</p>
+                          <p><span className="font-medium">Price:</span> {classItem.price_details}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </TabsContent>
+
+            {/* Testimonials Tab */}
+            <TabsContent value="testimonials" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-[#732b1d]">Manage Testimonials</h2>
+                <Dialog open={!!editingTestimonial || isAddingTestimonial} onOpenChange={(open) => {
+                  if (!open) {
                     setEditingTestimonial(null);
-                    setTestimonialForm({
+                    setIsAddingTestimonial(false);
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-[#732b1d] hover:bg-[#5a2117]" onClick={() => {
+                      setEditingTestimonial(null);
+                      setTestimonialForm({
                         author_name: '',
                         rating: 5,
                         review_text: '',
@@ -728,15 +754,15 @@ export default function AdminPage() {
                         </div>
                         <div className="flex space-x-2">
                           <Button
-                            size="sm"
+                            size="icon"
                             variant="outline"
                             onClick={() => handleEditTestimonial(testimonial)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
-                            size="sm"
-                            variant="outline"
+                            size="icon"
+                            variant="destructive"
                             onClick={() => handleDeleteTestimonial(testimonial.id)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -852,6 +878,12 @@ export default function AdminPage() {
                             </span>
                           </div>
                         )}
+                        {inquiry.event_type && (
+                          <div className="flex items-center space-x-2">
+                            <Sparkle className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm">Event: {inquiry.event_type}</span>
+                          </div>
+                        )}
                       </div>
                       <div className="bg-gray-50 p-3 rounded-lg">
                         <p className="text-sm font-medium mb-1">Message:</p>
@@ -916,5 +948,6 @@ export default function AdminPage() {
         </Tabs>
       </div>
     </motion.div>
+    </>
   );
 }

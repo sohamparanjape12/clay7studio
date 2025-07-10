@@ -2,12 +2,14 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Star, Quote } from "lucide-react";
 import { motion } from "framer-motion";
+import { getTestimonials } from "@/lib/supabase";
 
-const testimonials = [
+const fallbackTestimonials = [
 	{
 		role: "Beginner Potter",
 		name: "Priya Sharma",
@@ -66,6 +68,29 @@ const getInitials = (name: string) =>
 		.toUpperCase();
 
 export default function TestimonialsPage() {
+	const [testimonials, setTestimonials] = useState(fallbackTestimonials);
+
+	useEffect(() => {
+		(async () => {
+			try {
+				const data = await getTestimonials();
+				if (data && data.length > 0) {
+					setTestimonials(
+						data.map((t: any) => ({
+							role: t.role || "",
+							name: t.author_name || t.name || "",
+							rating: t.rating,
+							review: t.review_text || t.review,
+							source: t.source,
+						}))
+					);
+				}
+			} catch {
+				// fallback to static
+			}
+		})();
+	}, []);
+
 	const container = {
 		hidden: { opacity: 0 },
 		show: {

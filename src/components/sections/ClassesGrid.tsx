@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Users, Star, ArrowRight, Heart, Target, Palette } from 'lucide-react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { getClasses } from '@/lib/supabase';
 import { motion, Variants } from 'framer-motion';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 const staggerContainer: Variants = {
   hidden: { opacity: 0 },
@@ -29,18 +30,6 @@ const fadeInUp: Variants = {
     transition: { duration: 0.6, ease: "easeOut" },
   },
 };
-
-async function getClasses() {
-  const { data: classes, error } = await supabase
-    .from('classes')
-    .select('*')
-    .order('created_at', { ascending: true });
-  if (error) {
-    console.error('Error fetching classes:', error);
-    return [];
-  }
-  return classes || [];
-}
 
 const fallbackClasses = [
     {
@@ -116,9 +105,13 @@ export default function ClassesGrid() {
 
   useEffect(() => {
     const fetchClasses = async () => {
-      const fetchedClasses = await getClasses();
-      if (fetchedClasses && fetchedClasses.length > 0) {
-        setDisplayClasses(fetchedClasses);
+      try {
+        const fetchedClasses = await getClasses();
+        if (fetchedClasses && fetchedClasses.length > 0) {
+          setDisplayClasses(fetchedClasses);
+        }
+      } catch {
+        // fallback to static
       }
     };
     fetchClasses();
@@ -154,98 +147,107 @@ export default function ClassesGrid() {
           </p>
         </div>
 
-        {/* Classes Grid */}
-        <motion.div 
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.1 }}
+        {/* Carousel */}
+        <Carousel
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+          className="w-full mx-auto"
         >
-          {displayClasses.map((classItem) => {
-            const IconComponent = getClassIcon(classItem.name);
-            return (
-              <motion.div key={classItem.id} variants={fadeInUp} className="flex">
-                <Card className="overflow-hidden py-0 pb-5 flex flex-col gap-0 hover:shadow-xl transition-all duration-300 bg-white border-gray-200 w-full">
-                {/* Image */}
-                <div className="aspect-[4/3] overflow-hidden relative mb-5">
-                  <img 
-                    src={classItem.image_url} 
-                    alt={classItem.name}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <Badge className={`${getLevelColor(classItem.level)} border`}>
-                      {classItem.level}
-                    </Badge>
-                  </div>
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2">
-                    <IconComponent className="w-5 h-5 text-[#732b1d]" />
-                  </div>
-                </div>
-                
-                <CardHeader className="pb-0">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-xl text-gray-900 leading-tight">
-                      {classItem.name}
-                    </CardTitle>
-                    <div className="flex items-center gap-1 ml-2">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm text-gray-600">4.8</span>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-4 flex flex-col flex-1">
-                  <div className='flex-1 space-y-4'>
-                    <p className="text-gray-600 text-sm leading-relaxed">
-                        {classItem.description}
-                    </p>
-                    
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{classItem.duration}</span>
+          <CarouselContent className="gap-2 py-5">
+            {displayClasses.map((classItem) => {
+              const IconComponent = getClassIcon(classItem.name);
+              return (
+                <CarouselItem
+                  key={classItem.id}
+                  className="md:basis-1/3 lg:basis-1/3"
+                >
+                  <motion.div variants={fadeInUp} className="flex h-full">
+                    <Card className="overflow-hidden py-0 pb-5 flex flex-col gap-0 hover:shadow-xl transition-all duration-300 bg-white border-gray-200 w-full h-full">
+                      {/* Image */}
+                      <div className="aspect-[4/3] overflow-hidden relative mb-5">
+                        <img 
+                          src={classItem.image_url} 
+                          alt={classItem.name}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute top-4 left-4">
+                          <Badge className={`${getLevelColor(classItem.level)} border`}>
+                            {classItem.level}
+                          </Badge>
                         </div>
-                        <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        <span>Small groups</span>
+                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2">
+                          <IconComponent className="w-5 h-5 text-[#732b1d]" />
                         </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                        <div className="text-sm font-medium text-gray-900">Key Benefits:</div>
-                        <div className="flex flex-wrap gap-2">
-                        {classItem.benefits.split(', ').slice(0, 3).map((benefit, index) => (
-                            <span key={index} className="text-xs bg-[#732b1d]/10 text-[#732b1d] px-2 py-1 rounded">
-                            {benefit}
-                            </span>
-                        ))}
+                      </div>
+                      
+                      <CardHeader className="pb-0">
+                        <div className="flex items-start justify-between">
+                          <CardTitle className="text-xl text-gray-900 leading-tight">
+                            {classItem.name}
+                          </CardTitle>
+                          <div className="flex items-center gap-1 ml-2">
+                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            <span className="text-sm text-gray-600">4.8</span>
+                          </div>
                         </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="text-lg font-bold text-[#732b1d]">
-                      {classItem.price_details}
-                    </div>
-                    <Button 
-                      asChild 
-                      size="sm" 
-                      className="bg-[#732b1d] hover:bg-[#732b1d]/90 text-white"
-                    >
-                      <Link href={`/classes/${classItem.slug}`}>
-                        Learn More
-                        <ArrowRight className="ml-1 w-4 h-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-4 flex flex-col flex-1">
+                        <div className='flex-1 space-y-4'>
+                          <p className="text-gray-600 text-sm leading-relaxed">
+                            {classItem.description}
+                          </p>
+                          
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              <span>{classItem.duration}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Users className="w-4 h-4" />
+                              <span>Small groups</span>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium text-gray-900">Key Benefits:</div>
+                            <div className="flex flex-wrap gap-2">
+                              {classItem.benefits.split(', ').slice(0, 3).map((benefit, index) => (
+                                <span key={index} className="text-xs bg-[#732b1d]/10 text-[#732b1d] px-2 py-1 rounded">
+                                  {benefit}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                          <div className="text-lg font-bold text-[#732b1d]">
+                            {classItem.price_details}
+                          </div>
+                          <Button 
+                            asChild 
+                            size="sm" 
+                            className="bg-[#732b1d] hover:bg-[#732b1d]/90 text-white"
+                          >
+                            <Link href={`/classes/${classItem.slug}`}>
+                              Learn More
+                              <ArrowRight className="ml-1 w-4 h-4" />
+                            </Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </CarouselItem>
+              );
+            })}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
       </div>
     </section>
   );

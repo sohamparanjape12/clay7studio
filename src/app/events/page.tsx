@@ -16,6 +16,8 @@ import { CalendarIcon, Users, Clock, MapPin, Star, Heart, Gift, PartyPopper } fr
 import { format } from 'date-fns'
 import { motion, Variants } from 'framer-motion'
 import { useState } from 'react'
+import { createInquiry } from "@/lib/supabase"
+
 interface EventType {
   id: string
   name: string
@@ -121,30 +123,37 @@ export default function EventsPage() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Here you would typically send the data to your API
-    console.log('Event booking submitted:', {
-      ...formData,
-      eventType: selectedEvent?.id,
-      preferredDate: selectedDate
-    })
-    
-    setIsSubmitting(false)
-    toast.success("Booking Request Submitted!", {
-      description: "Thank you for your inquiry. We'll contact you soon to confirm the details.",
-      duration: 5000,
-    });
-    
-    // Reset form
-    setFormData({ name: '', email: '', phone: '', participants: '', message: '' })
-    setSelectedEvent(null)
-    setSelectedDate(undefined)
-  }
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      await createInquiry({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        inquiry_type: "Group Booking",
+        message: formData.message,
+        event_type: selectedEvent?.id,
+        num_participants: Number(formData.participants),
+        preferred_date: selectedDate ? selectedDate.toISOString().split("T")[0] : undefined,
+        class_interest: undefined,
+      });
+
+      toast.success("Booking Request Submitted!", {
+        description: "Thank you for your inquiry. We'll contact you soon to confirm the details.",
+        duration: 5000,
+      });
+
+      // Reset form
+      setFormData({ name: '', email: '', phone: '', participants: '', message: '' });
+      setSelectedEvent(null);
+      setSelectedDate(undefined);
+    } catch (error) {
+      toast.error("Failed to submit booking request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
