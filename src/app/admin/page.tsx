@@ -10,8 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Edit, Trash2, Eye, Star, MessageCircle, Calendar, Users, BookOpen, Mail, Phone, Sparkle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { motion } from "framer-motion";
 import {
   createTestimonial,
   updateTestimonial,
@@ -19,7 +17,9 @@ import {
   createClass as createClassDb,
   updateClass,
   deleteClass as deleteClassDb,
+  getSupabaseClient,
 } from "@/lib/supabase";
+import { motion } from "framer-motion";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 
@@ -109,6 +109,7 @@ export default function AdminPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const supabase = getSupabaseClient();
       const [classesRes, testimonialsRes, inquiriesRes] = await Promise.all([
         supabase.from('classes').select('*').order('created_at', { ascending: false }),
         supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
@@ -235,6 +236,7 @@ export default function AdminPage() {
   const handleDeleteInquiry = async (id: string) => {
     if (confirm('Are you sure you want to delete this inquiry?')) {
       try {
+        const supabase = getSupabaseClient();
         await supabase.from('inquiries').delete().eq('id', id);
         fetchData();
       } catch (error) {

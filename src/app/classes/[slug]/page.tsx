@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getClassBySlug } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -97,13 +97,15 @@ export default function ClassDetailsPage() {
 
   useEffect(() => {
     async function fetchClass() {
-      const { data, error } = await supabase
-        .from("classes")
-        .select("*")
-        .eq("slug", slug)
-        .single();
-      if (data) setClassData(data);
-      else {
+      try {
+        const data = await getClassBySlug(slug);
+        if (data) setClassData(data);
+        else {
+          // fallback to static
+          const fallback = fallbackClasses.find((c) => c.slug === slug);
+          setClassData(fallback || null);
+        }
+      } catch {
         // fallback to static
         const fallback = fallbackClasses.find((c) => c.slug === slug);
         setClassData(fallback || null);

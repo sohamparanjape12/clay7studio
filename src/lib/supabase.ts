@@ -2,17 +2,18 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/supabase'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+export function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if ((!supabaseUrl || !supabaseAnonKey) && typeof window !== "undefined") {
+    throw new Error('Missing Supabase environment variables')
+  }
+  return createClient<Database>(supabaseUrl!, supabaseAnonKey!)
 }
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 
 // Helper functions for common database operations
 export const getClasses = async () => {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('classes')
     .select('*')
@@ -27,6 +28,7 @@ export const getClasses = async () => {
 }
 
 export const getClassBySlug = async (slug: string) => {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('classes')
     .select('*')
@@ -42,6 +44,7 @@ export const getClassBySlug = async (slug: string) => {
 }
 
 export const getTestimonials = async () => {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('testimonials')
     .select('*')
@@ -66,6 +69,7 @@ export const createInquiry = async (inquiry: {
   num_participants?: number
   preferred_date?: string
 }) => {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('inquiries')
     .insert([inquiry])
@@ -85,6 +89,7 @@ export const createTestimonial = async (testimonial: {
   review_text: string;
   source: string;
 }) => {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('testimonials')
     .insert([testimonial])
@@ -99,6 +104,7 @@ export const updateTestimonial = async (id: string, testimonial: {
   review_text: string;
   source: string;
 }) => {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('testimonials')
     .update(testimonial)
@@ -109,6 +115,7 @@ export const updateTestimonial = async (id: string, testimonial: {
 };
 
 export const deleteTestimonial = async (id: string) => {
+  const supabase = getSupabaseClient();
   const { error } = await supabase
     .from('testimonials')
     .delete()
@@ -126,6 +133,7 @@ export const createClass = async (classObj: {
   benefits: string;
   image_url: string;
 }) => {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('classes')
     .insert([classObj])
@@ -144,6 +152,7 @@ export const updateClass = async (id: string, classObj: {
   benefits: string;
   image_url: string;
 }) => {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('classes')
     .update(classObj)
@@ -154,6 +163,7 @@ export const updateClass = async (id: string, classObj: {
 };
 
 export const deleteClass = async (id: string) => {
+  const supabase = getSupabaseClient();
   const { error } = await supabase
     .from('classes')
     .delete()
